@@ -1,0 +1,79 @@
+#!/usr/bin/env python3
+
+
+"""
+NOTE TO WANDO:
+ 
+Line 1 of this file is called a "shebang", which tells bash which program to use
+to run it.
+
+You could also write #!/usr/bin/python3, I use /usr/bin/env because it returns
+the correct path for the program, as it can vary between UNIXes and even between
+distributions of Linux. Try running /usr/bin/env python3 in a terminal.
+ 
+Then we can make the program executable (by running chmod +x jeopardy-hamish, in
+my case). The file extension doesn't really mean anything in bash, hence why I 
+don't have .py
+"""
+
+
+import sys
+import pandas
+
+pandas.set_option( 'display.max_colwidth', None )
+
+
+def fixColumnNames( dataFrame ):
+    """
+    Remove the leading whitespace from the column names
+
+    dataFrame.columns is immutable, so we can't modify values in place. Instead,
+    we have to make a new list of corrected names, then set that as the column 
+    names
+    """
+    
+    def removeLeadingWhitespace( columnName ):
+        """ remove space at the start of a string, if it exists """
+        if columnName[0] == " ":
+            columnName = columnName[1:]
+        return columnName
+            
+    columns = dataFrame.columns.values
+    newColumns = []
+    for col in columns:
+        newColumns.append( removeLeadingWhitespace( col ) )
+    dataFrame.columns = newColumns
+    return dataFrame
+
+
+def filterRowsByList( dataFrame, wordList ):
+    """ 
+    remove all rows of dataFrame whose Question field doesn't contain all words
+    in wordList
+    """
+    
+    def anyWordsPresent( row, wordList ):
+        """ True if all words in wordList are present in row's question """
+        present = True
+        for word in wordList:
+            if word not in row["Question"]:
+                present = False
+        return present
+                
+    return dataFrame[ dataFrame.apply( lambda x : anyWordsPresent( x, wordList ), axis=1 ) ]
+
+
+def main():
+    dataFrame = pandas.read_csv( 'jeopardy.csv' )
+
+    # Question 2
+    dataFrame = fixColumnNames( dataFrame )
+    print( len( dataFrame ) )
+
+    # Question 3
+    dataFrame = filterRowsByList( dataFrame, ["King", "England"] )
+    print( len( dataFrame ) )
+
+
+if __name__ == '__main__':
+    sys.exit(main())
